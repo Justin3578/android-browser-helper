@@ -30,9 +30,13 @@ import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.browser.trusted.TrustedWebActivityDisplayMode;
 import androidx.browser.trusted.TrustedWebActivityIntentBuilder;
 import androidx.browser.trusted.TrustedWebActivityService;
+import androidx.browser.trusted.sharing.ShareData;
+import androidx.browser.trusted.sharing.ShareTarget;
 import androidx.core.content.ContextCompat;
 
 import com.google.androidbrowserhelper.trusted.splashscreens.PwaWrapperSplashScreenStrategy;
+
+import org.json.JSONException;
 
 import static android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT;
 
@@ -159,6 +163,8 @@ public class LauncherActivity extends AppCompatActivity {
             twaBuilder.setAdditionalTrustedOrigins(mMetadata.additionalTrustedOrigins);
         }
 
+        addShareDataIfPresent(twaBuilder);
+
         mTwaLauncher = new TwaLauncher(this);
         mTwaLauncher.launch(twaBuilder,
                 mSplashScreenStrategy,
@@ -183,6 +189,23 @@ public class LauncherActivity extends AppCompatActivity {
         // launching a TWA. In that case we're only passing a new intent into existing TWA, and
         // don't show the splash screen.
         return isTaskRoot();
+    }
+
+    private void addShareDataIfPresent(TrustedWebActivityIntentBuilder twaBuilder) {
+        ShareData shareData = SharingUtils.retrieveShareDataFromIntent(getIntent());
+        if (shareData == null) {
+            return;
+        }
+        if (mMetadata.shareTarget == null) {
+            Log.d(TAG, "Failed to share: share target not defined in the AndroidManifest");
+            return;
+        }
+        try {
+            ShareTarget shareTarget = SharingUtils.parseShareTargetJson(mMetadata.shareTarget);
+            twaBuilder.setShareParams(shareTarget, shareData);
+        } catch (JSONException e) {
+            Log.d(TAG, "Failed to parse share target json: " + e.toString());
+        }
     }
 
     /**
