@@ -1,6 +1,6 @@
 include ':androidbrowserhelper'
 include ':playbilling'
-
+include ':demos:custom-tabs-headers'
 include ':demos:custom-tabs-example-app'
 include ':demos:payment-provider'
 include ':demos:twa-basic'

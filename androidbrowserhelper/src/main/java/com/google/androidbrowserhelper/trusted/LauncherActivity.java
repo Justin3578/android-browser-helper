@@ -14,18 +14,18 @@
 
 package com.google.androidbrowserhelper.trusted;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.graphics.Matrix;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.ImageView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.appcompat.app.AppCompatActivity;
 import androidx.browser.customtabs.CustomTabColorSchemeParams;
+import androidx.browser.customtabs.CustomTabsCallback;
 import androidx.browser.customtabs.CustomTabsIntent;
 import androidx.browser.trusted.TrustedWebActivityDisplayMode;
 import androidx.browser.trusted.TrustedWebActivityIntentBuilder;
@@ -37,8 +37,6 @@ import androidx.core.content.ContextCompat;
 import com.google.androidbrowserhelper.trusted.splashscreens.PwaWrapperSplashScreenStrategy;
 
 import org.json.JSONException;
-
-import static android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_DEFAULT;
 
 /**
  * A convenience class to make using Trusted Web Activities easier. You can extend this class for
@@ -96,7 +94,7 @@ import static android.view.WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_M
  * [2] https://www.chromium.org/developers/how-tos/run-chromium-with-flags#TOC-Setting-Flags-for-Chrome-on-Android
  * [3] https://developer.android.com/reference/android/support/v4/content/FileProvider
  */
-public class LauncherActivity extends AppCompatActivity {
+public class LauncherActivity extends Activity {
     private static final String TAG = "TWALauncherActivity";
 
     private static final String BROWSER_WAS_LAUNCHED_KEY =
@@ -113,6 +111,8 @@ public class LauncherActivity extends AppCompatActivity {
 
     @Nullable
     private PwaWrapperSplashScreenStrategy mSplashScreenStrategy;
+
+    private CustomTabsCallback mCustomTabsCallback = new QualityEnforcer();
 
     @Nullable
     private TwaLauncher mTwaLauncher;
@@ -167,6 +167,7 @@ public class LauncherActivity extends AppCompatActivity {
 
         mTwaLauncher = new TwaLauncher(this);
         mTwaLauncher.launch(twaBuilder,
+                mCustomTabsCallback,
                 mSplashScreenStrategy,
                 () -> mBrowserWasLaunched = true,
                 getFallbackStrategy());
@@ -178,6 +179,9 @@ public class LauncherActivity extends AppCompatActivity {
 
         new TwaSharedPreferencesManager(this)
                 .writeLastLaunchedProviderPackageName(mTwaLauncher.getProviderPackage());
+
+        ManageDataLauncherActivity.addSiteSettingsShortcut(this,
+                mTwaLauncher.getProviderPackage());
     }
 
     private boolean splashScreenNeeded() {
